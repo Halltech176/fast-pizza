@@ -7,6 +7,7 @@ import {
   formatCurrency,
   formatDate,
 } from "../../utils/helpers";
+import OrderItem from "./OrderItem";
 
 function Order() {
   const order = useLoaderData();
@@ -23,27 +24,43 @@ function Order() {
   const deliveryIn = calcMinutesLeft(estimatedDelivery);
 
   return (
-    <div>
-      <div>
-        <h2>Status</h2>
+    <div className="px-4 py-6 space-y-8">
+      <div className="flex flex-wrap items-center justify-between">
+        <h2 className="text-xl font-semibold">Order #{id} status</h2>
 
-        <div>
-          {priority && <span>Priority</span>}
-          <span>{status} order</span>
+        <div className="space-x-2">
+          {priority && (
+            <span className="px-3 py-1 text-sm font-semibold tracking-wide uppercase bg-red-500 rounded-full text-red-50">
+              Priority
+            </span>
+          )}
+          <span className="px-3 py-1 text-sm font-semibold tracking-wide uppercase bg-green-500 rounded-full text-green-50">
+            {status} order
+          </span>
         </div>
       </div>
 
-      <div>
+      <div className="flex flex-wrap items-center justify-between gap-2 px-6 py-5 bg-stone-300">
         <p>
           {deliveryIn >= 0
             ? `Only ${calcMinutesLeft(estimatedDelivery)} minutes left 😃`
             : "Order should have arrived"}
         </p>
-        <p>(Estimated delivery: {formatDate(estimatedDelivery)})</p>
+        <p className="text-xl text-stone-500">
+          (Estimated delivery: {formatDate(estimatedDelivery)})
+        </p>
       </div>
 
-      <div>
-        <p>Price pizza: {formatCurrency(orderPrice)}</p>
+      <ul className="border-t border-b divide-y divider-stone-200">
+        {cart.map((item) => {
+          return <OrderItem item={item} key={item.id} />;
+        })}
+      </ul>
+
+      <div className="px-6 py-5 space--y-2 bg-stone-200">
+        <p className="text-sm font-medium text-stone-300">
+          Price pizza: {formatCurrency(orderPrice)}
+        </p>
         {priority && <p>Price priority: {formatCurrency(priorityPrice)}</p>}
         <p>To pay on delivery: {formatCurrency(orderPrice + priorityPrice)}</p>
       </div>
