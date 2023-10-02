@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSelector } from "react-redux";
 import { Form, redirect, useActionData } from "react-router-dom";
 import { createOrder } from "../../services/apiRestaurant";
 import Button from "../../ui/Button";
@@ -34,6 +35,7 @@ const fakeCart = [
 ];
 
 function CreateOrder() {
+  const username = useSelector((state) => state.user.username);
   const [withPriority, setWithPriority] = useState(false);
 
   const formErrors = useActionData();
@@ -51,6 +53,7 @@ function CreateOrder() {
             className="w-full input"
             type="text"
             name="customer"
+            defaultValue={username}
             required
           />
         </div>
