@@ -1,8 +1,12 @@
 import { useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Form, redirect, useActionData } from "react-router-dom";
 import { createOrder } from "../../services/apiRestaurant";
+import store from "../../store";
 import Button from "../../ui/Button";
+import { clearCart, getCart } from "../cart/cartSlice";
+import EmptyCart from "../cart/EmptyCart";
+import { fetchAddress } from "../user/userSlice";
 
 // https://uibakery.io/regex-library/phone-number
 const isValidPhone = (str) =>
@@ -35,22 +39,28 @@ const fakeCart = [
 ];
 
 function CreateOrder() {
-  const username = useSelector((state) => state.user.username);
+  const { username, status, position, address } = useSelector(
+    (state) => state.user,
+  );
+  const isLoading = status === "loading";
   const [withPriority, setWithPriority] = useState(false);
+  const dispatch = useDispatch();
 
   const formErrors = useActionData();
 
-  const cart = fakeCart;
+  const cart = useSelector(getCart);
+
+  if (!cart.length) return <EmptyCart />;
 
   return (
     <div className="px-4 py-6">
       <h2 className="mb-8 text-xl font-semibold">Ready to order? Let's go!</h2>
 
       <Form method="POST">
-        <div className="flex flex-col gap-2 mb-5 sm:flex-row sm:items-center">
+        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center">
           <label className="sm:basis-40">First Name</label>
           <input
-            className="w-full input"
+            className="input w-full"
             type="text"
             name="customer"
             defaultValue={username}
@@ -58,33 +68,48 @@ function CreateOrder() {
           />
         </div>
 
-        <div className="flex flex-col gap-2 mb-5 sm:flex-row sm:items-center">
+        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center">
           <label className="sm:basis-40">Phone number</label>
           <div className="grow">
-            <input className="w-full input" type="tel" name="phone" required />
+            <input className="input w-full" type="tel" name="phone" required />
           </div>
           {formErrors?.phone && (
-            <p className="p-2 mt-2 text-red-700 bg-red-100 rounded-full text-cs">
+            <p className="text-cs mt-2 rounded-full bg-red-100 p-2 text-red-700">
               {formErrors.phone}
             </p>
           )}
         </div>
 
-        <div className="flex flex-col gap-2 mb-5 sm:flex-row sm:items-center">
+        <div className="relative mb-5 flex flex-col gap-2 sm:flex-row sm:items-center">
           <label className="sm:basis-40">Address</label>
           <div className="grow">
             <input
-              className="w-full input"
+              className="input w-full"
               type="text"
               name="address"
+              disabled={isLoading}
+              defaultValue={address}
               required
             />
           </div>
+          {!position.latitude && !position.longitude && (
+            <span className="absolute right-[3px] z-50">
+              <Button
+                type="small"
+                onClick={(e) => {
+                  e.preventDefault();
+                  dispatch(fetchAddress());
+                }}
+              >
+                Get Position
+              </Button>
+            </span>
+          )}
         </div>
 
-        <div className="flex items-center gap-5 mb-12">
+        <div className="mb-12 flex items-center gap-5">
           <input
-            className="w-6 h-6 focus-ring accent-yellow-400 focus:outline-none focus:ring-yellow-400 focus:ring-offset-2 "
+            className="focus-ring h-6 w-6 accent-yellow-400 focus:outline-none focus:ring-yellow-400 focus:ring-offset-2 "
             type="checkbox"
             name="priority"
             id="priority"
@@ -128,6 +153,8 @@ export const CreateOrderAction = async ({ request }) => {
 
   if (Object.keys(errors).length > 0) return errors;
   const newOrder = await createOrder(order);
+
+  store.dispatch(clearCart());
 
   return redirect(`/order/${newOrder.id}`);
 };
